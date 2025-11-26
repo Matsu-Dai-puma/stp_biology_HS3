@@ -6,9 +6,12 @@
     <title>生物 完全攻略アプリ</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background-color: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; position: relative; overflow: hidden; }
-        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 10px; letter-spacing: 1px; }
-        .subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }
+        .container { background-color: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;}
+        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 10px; letter-spacing: 1px; flex-shrink: 0;}
+        .subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; flex-shrink: 0;}
+
+        /* スクロール領域の確保 */
+        .scroll-content { overflow-y: auto; flex-grow: 1; padding: 0 5px; }
 
         /* メインメニューのボタン */
         .menu-btn {
@@ -43,21 +46,33 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #555; }
         input[type="number"], select { padding: 10px; font-size: 16px; width: 100%; box-sizing: border-box; border-radius: 5px; border: 1px solid #ddd; }
 
-        #timer-bar-container { width: 100%; height: 6px; background-color: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        #timer-bar-container { width: 100%; height: 6px; background-color: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden; flex-shrink: 0;}
         #timer-bar { height: 100%; width: 100%; background-color: #2ecc71; transition: width 0.1s linear; }
 
         .hidden { display: none !important; }
         #question-text { font-size: 18px; font-weight: bold; line-height: 1.6; text-align: left; margin-bottom: 20px; }
         #feedback-msg { text-align: left; margin-bottom: 15px; font-weight: bold; min-height: 24px; }
-        #next-btn { background-color: #e67e22; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; display: none; }
+        #next-btn { background-color: #e67e22; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; display: none; margin-bottom: 20px;}
         
         .tag { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #eee; color: #555; margin-bottom: 8px; }
+
+        /* ▼▼▼ 復習リスト用のスタイル（追加） ▼▼▼ */
+        .review-container { text-align: left; margin-top: 20px; width: 100%; }
+        .review-item { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; }
+        .review-item.r-correct { border-left: 5px solid #2ecc71; }
+        .review-item.r-wrong { border-left: 5px solid #e74c3c; }
+        .review-q { font-weight: bold; font-size: 14px; margin-bottom: 8px; display: block; }
+        .review-ans { font-size: 13px; color: #555; }
+        .ans-label { font-weight: bold; margin-right: 5px; }
+        .val-correct { color: #27ae60; }
+        .val-wrong { color: #c0392b; }
+        .val-yours { color: #2980b9; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="menu-screen">
+    <div id="menu-screen" class="scroll-content">
         <h1>生物 完全攻略</h1>
         <p class="subtitle">今日は何を勉強しますか？</p>
         
@@ -73,7 +88,7 @@
         <p id="status-msg" style="font-size:12px; color:#aaa; margin-top:20px;"></p>
     </div>
 
-    <div id="setting-screen" class="hidden">
+    <div id="setting-screen" class="hidden scroll-content">
         <h1 id="setting-title">設定</h1>
         
         <div id="vocab-settings" class="hidden">
@@ -117,29 +132,34 @@
         <button class="btn-back" onclick="backToMenu()">メニューに戻る</button>
     </div>
 
-    <div id="quiz-screen" class="hidden">
-        <div style="display:flex; justify-content:space-between; font-size:14px; color:#888; margin-bottom:5px;">
+    <div id="quiz-screen" class="hidden" style="width:100%; height:100%; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; font-size:14px; color:#888; margin-bottom:5px; flex-shrink:0;">
             <span id="mode-display">モード</span>
             <span><span id="current-q">1</span> / <span id="total-q">10</span></span>
         </div>
         <div id="timer-bar-container"><div id="timer-bar"></div></div>
         
-        <div id="question-area">
-            <span id="category-tag" class="tag">カテゴリ</span>
-            <div id="question-text">問題文</div>
-        </div>
+        <div class="scroll-content">
+            <div id="question-area">
+                <span id="category-tag" class="tag">カテゴリ</span>
+                <div id="question-text">問題文</div>
+            </div>
 
-        <div id="feedback-msg"></div>
-        <div id="options-container"></div>
-        <button id="next-btn" onclick="nextQuestion()">次の問題へ ➡</button>
+            <div id="feedback-msg"></div>
+            <div id="options-container"></div>
+            <button id="next-btn" onclick="nextQuestion()">次の問題へ ➡</button>
+        </div>
     </div>
 
-    <div id="result-screen" class="hidden">
+    <div id="result-screen" class="hidden scroll-content">
         <h1>お疲れ様でした！</h1>
-        <div style="font-size:40px; font-weight:bold; color:#2c3e50; margin:20px 0;">
+        <div style="font-size:40px; font-weight:bold; color:#2c3e50; margin:10px 0;">
             <span id="score-num">0</span> / <span id="score-total">0</span>
         </div>
-        <p id="comment" style="margin-bottom:30px;">コメント</p>
+        <p id="comment" style="margin-bottom:20px;">コメント</p>
+        
+        <div id="review-list" class="review-container"></div>
+
         <button class="btn-start" onclick="location.reload()">トップに戻る</button>
     </div>
 </div>
@@ -150,13 +170,14 @@
 
 <script>
     // グローバル変数
-    let appMode = ''; // 'vocab' or 'exp'
+    let appMode = ''; 
     let expDifficulty = 'easy';
     let currentData = [];
     let currentIndex = 0;
     let score = 0;
     let timeLimitSetting = 15;
     let timerInterval;
+    let userHistory = []; // ★履歴保存用配列
 
     // 起動時のデータチェック
     window.onload = function() {
@@ -197,10 +218,9 @@
         document.getElementById('menu-screen').classList.remove('hidden');
     }
 
-    // 単語カテゴリの生成
     function initVocabCategories() {
         const select = document.getElementById('category-select');
-        if (select.options.length > 1) return; // 既に生成済みならスキップ
+        if (select.options.length > 1) return; 
         if (typeof vocabQuestions === 'undefined') return;
 
         const categories = [...new Set(vocabQuestions.map(q => q.category))];
@@ -214,7 +234,6 @@
         });
     }
 
-    // 実験難易度のセット
     function setExpDifficulty(diff) {
         expDifficulty = diff;
         document.getElementById('btn-easy').classList.remove('selected');
@@ -222,7 +241,6 @@
         document.getElementById('btn-' + diff).classList.add('selected');
     }
 
-    // 配列シャッフル
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -231,9 +249,8 @@
         return array;
     }
 
-    // クイズ開始
     function startQuiz() {
-        // データの選択
+        // データ選択ロジック
         let sourceData = [];
         if (appMode === 'vocab') {
             if (typeof vocabQuestions === 'undefined') { alert("単語データがありません"); return; }
@@ -244,7 +261,6 @@
                 sourceData = vocabQuestions.filter(q => q.category === cat);
             }
         } else {
-            // 実験モード
             if (expDifficulty === 'easy') {
                 if (typeof easyQuestions === 'undefined') { alert("Easyデータがありません"); return; }
                 sourceData = easyQuestions;
@@ -254,22 +270,23 @@
             }
         }
 
-        // 出題数と時間の取得
         let count = parseInt(document.getElementById('question-count').value);
         timeLimitSetting = parseInt(document.getElementById('time-limit').value);
 
         if (count > sourceData.length) count = sourceData.length;
 
-        // シャッフルして抽出
         currentData = shuffle([...sourceData]).slice(0, count);
         
-        // 変数リセット
+        // リセット
         currentIndex = 0;
         score = 0;
+        userHistory = []; // ★履歴リセット
 
-        // 画面切り替え
         document.getElementById('setting-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
+        // クイズ画面ではflexスタイルを適用（強制上書き）
+        document.getElementById('quiz-screen').style.display = 'flex'; 
+        
         document.getElementById('total-q').textContent = currentData.length;
         document.getElementById('mode-display').textContent = appMode === 'vocab' ? "単語" : (expDifficulty === 'easy' ? "実験(Easy)" : "実験(Hard)");
 
@@ -277,7 +294,6 @@
     }
 
     function showQuestion() {
-        // リセット処理
         clearInterval(timerInterval);
         document.getElementById('options-container').innerHTML = '';
         document.getElementById('feedback-msg').textContent = '';
@@ -290,7 +306,6 @@
         document.getElementById('category-tag').textContent = q.category || "一般";
         document.getElementById('question-text').innerHTML = q.question.replace(/\n/g, '<br>');
 
-        // 選択肢シャッフル表示
         const options = shuffle([...q.options]);
         options.forEach(opt => {
             const btn = document.createElement('button');
@@ -304,7 +319,7 @@
     }
 
     function startTimer() {
-        let timeLeft = timeLimitSetting * 100; // 0.01秒単位
+        let timeLeft = timeLimitSetting * 100; 
         const total = timeLeft;
         
         timerInterval = setInterval(() => {
@@ -332,7 +347,17 @@
         });
 
         const feedback = document.getElementById('feedback-msg');
-        if (btn.textContent === correct) {
+        const isCorrect = (btn.textContent === correct);
+
+        // ★履歴に保存
+        userHistory.push({
+            question: currentData[currentIndex].question,
+            userChoice: btn.textContent,
+            correctAnswer: correct,
+            isCorrect: isCorrect
+        });
+
+        if (isCorrect) {
             score++;
             btn.classList.add('correct');
             feedback.innerHTML = "<span style='color:#27ae60'>正解！🙆‍♂️</span>";
@@ -341,8 +366,11 @@
             feedback.innerHTML = `<span style='color:#c0392b'>不正解...🙅‍♀️ <br>正解は「${correct}」</span>`;
         }
         document.getElementById('next-btn').style.display = 'block';
+        
+        // 自動スクロール
+        document.getElementById('next-btn').scrollIntoView({behavior: "smooth", block: "center"});
     }
-
+    
     function showTimeUp() {
         const q = currentData[currentIndex];
         const allBtns = document.querySelectorAll('.option-btn');
@@ -350,8 +378,18 @@
             b.disabled = true;
             if(b.textContent === q.answer) b.classList.add('correct');
         });
+        
+        // ★履歴に保存（時間切れ）
+        userHistory.push({
+            question: q.question,
+            userChoice: "（時間切れ）",
+            correctAnswer: q.answer,
+            isCorrect: false
+        });
+
         document.getElementById('feedback-msg').innerHTML = `<span style='color:#c0392b'>時間切れ！⏰ <br>正解は「${q.answer}」</span>`;
         document.getElementById('next-btn').style.display = 'block';
+        document.getElementById('next-btn').scrollIntoView({behavior: "smooth", block: "center"});
     }
 
     function nextQuestion() {
@@ -365,6 +403,7 @@
 
     function showResult() {
         document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').style.display = 'none'; // flex解除
         document.getElementById('result-screen').classList.remove('hidden');
         
         document.getElementById('score-num').textContent = score;
@@ -376,6 +415,26 @@
         else if (rate >= 0.8) comment.textContent = "素晴らしい成績です！あと少し！👍";
         else if (rate >= 0.5) comment.textContent = "まずは半分クリア！復習しましょう💪";
         else comment.textContent = "焦らず基礎から確認していきましょう🔰";
+
+        // ★復習リストの生成
+        const listContainer = document.getElementById('review-list');
+        listContainer.innerHTML = "<h3>📝 復習リスト</h3>";
+        
+        userHistory.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = item.isCorrect ? 'review-item r-correct' : 'review-item r-wrong';
+            
+            const resultIcon = item.isCorrect ? "✅" : "❌";
+            
+            div.innerHTML = `
+                <span class="review-q">Q${index + 1}. ${item.question}</span>
+                <div class="review-ans">
+                    <span class="ans-label">あなたの回答:</span> <span class="${item.isCorrect ? 'val-correct' : 'val-wrong'}">${item.userChoice}</span> ${resultIcon}<br>
+                    ${!item.isCorrect ? `<span class="ans-label">正解:</span> <span class="val-correct">${item.correctAnswer}</span>` : ''}
+                </div>
+            `;
+            listContainer.appendChild(div);
+        });
     }
 </script>
 
