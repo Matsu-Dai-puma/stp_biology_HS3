@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生物 基礎CHECKクイズ</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: background 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:hover { background-color: #2980b9; }
+
+        #next-btn {
+            background-color: #e67e22; 
+            font-weight: bold;
+            margin-top: 20px;
+            display: none;
+        }
+        #next-btn:hover { background-color: #d35400; }
+        
+        .option-btn {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            border: 2px solid #bdc3c7;
+            text-align: left;
+            padding: 15px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .option-btn:hover:not(:disabled) { background-color: #dfe6e9; }
+        
+        .correct { background-color: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .wrong { background-color: #e74c3c !important; color: white; border-color: #c0392b; }
+
+        .input-group { margin-bottom: 20px; text-align: left; background: #f9f9f9; padding: 15px; border-radius: 8px;}
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;}
+        input[type="number"], select {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #timer-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            display: none;
+        }
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #2ecc71;
+            transition: width 0.1s linear;
+        }
+
+        .hidden { display: none !important; }
+        #result-score { font-size: 32px; color: #e67e22; font-weight: bold; }
+        .question-text { font-size: 18px; margin-bottom: 20px; line-height: 1.5; text-align: left; font-weight: bold;}
+        .progress { color: #7f8c8d; font-size: 14px; margin-bottom: 10px; text-align: left;}
+        
+        #feedback-msg {
+            font-weight: bold;
+            font-size: 18px;
+            min-height: 27px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen">
+        <h1>生物 基礎CHECK単語問題(参考:リードα)</h1>
+        
+        <div class="input-group">
+            <label for="category-select">出題する単元</label>
+            <select id="category-select">
+                <option value="all">すべての単元（ランダム）</option>
+                </select>
+        </div>
+
+        <div class="input-group">
+            <label for="question-count">出題数（問）</label>
+            <input type="number" id="question-count" value="10" min="1">
+        </div>
+
+        <div class="input-group">
+            <label for="time-limit">1問あたりの制限時間（秒）</label>
+            <input type="number" id="time-limit" value="10" min="3" max="60">
+        </div>
+
+        <button class="btn" onclick="startQuiz()">クイズスタート</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="progress">第 <span id="current-question-num">1</span> 問 / 全 <span id="total-question-num">5</span> 問</div>
+        <div id="timer-bar-container"><div id="timer-bar"></div></div>
+        
+        <div id="question-text" class="question-text">ここに問題が表示されます</div>
+        
+        <div id="feedback-msg"></div>
+
+        <div id="options-container">
+            </div>
+
+        <button id="next-btn" class="btn" onclick="goToNextQuestion()">次の問題へ ➡</button>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h1>終了！</h1>
+        <p>あなたの正解数は...</p>
+        <div id="result-score">3 / 5</div>
+        <p id="comment"></p>
+        <button class="btn" onclick="location.reload()">もう一度挑戦する</button>
+    </div>
+</div>
+
+<script src="questions.js"></script> 
+
+<script>
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let timeLimit = 10;
+    let timerInterval;
+    let shuffledQuizData = []; 
+
+    // ページ読み込み時の処理
+    window.onload = function() {
+        if(typeof quizData !== 'undefined'){
+            // カテゴリのリストを作成してプルダウンに追加
+            const categorySelect = document.getElementById('category-select');
+            
+            // 全問題からカテゴリ名だけを抽出して重複を削除
+            const categories = [...new Set(quizData.map(q => q.category))];
+            
+            // カテゴリを選択肢に追加
+            categories.forEach(cat => {
+                if(cat) { // カテゴリ名がある場合のみ
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                }
+            });
+
+            // デフォルト出題数の設定
+            const defaultCount = Math.min(20, quizData.length);
+            document.getElementById('question-count').value = defaultCount;
+            document.getElementById('question-count').max = quizData.length;
+        } else {
+            alert("エラー: questions.js が読み込まれていません。\nコンマ抜けなどを確認してください。");
+        }
+    };
+
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const timerBar = document.getElementById('timer-bar');
+    const timerBarContainer = document.getElementById('timer-bar-container');
+    const nextBtn = document.getElementById('next-btn');
+    const feedbackMsg = document.getElementById('feedback-msg');
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startQuiz() {
+        const inputTime = document.getElementById('time-limit').value;
+        let inputCount = parseInt(document.getElementById('question-count').value);
+        const selectedCategory = document.getElementById('category-select').value;
+
+        timeLimit = parseInt(inputTime);
+        if (isNaN(timeLimit) || timeLimit < 1) timeLimit = 10;
+
+        if (isNaN(inputCount) || inputCount < 1) inputCount = 10;
+
+        // questions.jsガード
+        if (typeof quizData === 'undefined') {
+            alert("問題データがありません。questions.jsを確認してください。");
+            return;
+        }
+
+        // ▼【重要】カテゴリによるフィルタリング処理
+        let filteredData = quizData;
+        if (selectedCategory !== 'all') {
+            // "all"以外が選ばれたら、そのカテゴリの問題だけを抽出
+            filteredData = quizData.filter(q => q.category === selectedCategory);
+        }
+
+        // 出題数が、抽出された問題数より多い場合は調整
+        if (inputCount > filteredData.length) {
+            inputCount = filteredData.length;
+        }
+
+        // フィルタリングされた問題をシャッフルして切り取る
+        const fullShuffled = shuffleArray([...filteredData]); 
+        shuffledQuizData = fullShuffled.slice(0, inputCount);
+
+        currentQuestionIndex = 0;
+        score = 0;
+
+        startScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        timerBarContainer.style.display = 'block';
+        
+        document.getElementById('total-question-num').textContent = shuffledQuizData.length;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        resetState();
+        const currentQuestion = shuffledQuizData[currentQuestionIndex];
+        
+        document.getElementById('current-question-num').textContent = currentQuestionIndex + 1;
+        
+        // 問題文の前に【カテゴリ名】を表示してあげると親切
+        const categoryLabel = currentQuestion.category ? `【${currentQuestion.category}】<br>` : "";
+        questionText.innerHTML = categoryLabel + currentQuestion.question;
+
+        const shuffledOptions = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.innerText = option;
+            button.classList.add('option-btn');
+            button.onclick = () => checkAnswer(button, currentQuestion.answer);
+            optionsContainer.appendChild(button);
+        });
+
+        startTimer();
+    }
+
+    function resetState() {
+        clearInterval(timerInterval);
+        optionsContainer.innerHTML = '';
+        feedbackMsg.innerText = '';
+        feedbackMsg.style.color = 'inherit';
+        nextBtn.style.display = 'none';
+        timerBar.style.width = '100%';
+        timerBar.style.backgroundColor = '#2ecc71';
+    }
+
+    function startTimer() {
+        let timeLeft = timeLimit;
+        const totalTime = timeLimit * 100; 
+        let currentTime = totalTime;
+
+        timerInterval = setInterval(() => {
+            currentTime--;
+            const percentage = (currentTime / totalTime) * 100;
+            timerBar.style.width = percentage + '%';
+
+            if (percentage < 30) timerBar.style.backgroundColor = '#e74c3c';
+            else if (percentage < 60) timerBar.style.backgroundColor = '#f1c40f';
+
+            if (currentTime <= 0) {
+                clearInterval(timerInterval);
+                timeUp();
+            }
+        }, 10);
+    }
+
+    function checkAnswer(selectedButton, correctAnswer) {
+        clearInterval(timerInterval);
+        
+        const isCorrect = selectedButton.innerText === correctAnswer;
+        
+        const buttons = optionsContainer.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.innerText === correctAnswer) {
+                btn.classList.add('correct');
+            }
+        });
+
+        if (isCorrect) {
+            score++;
+            feedbackMsg.innerText = "正解！🙆‍♂️";
+            feedbackMsg.style.color = "#27ae60";
+        } else {
+            selectedButton.classList.add('wrong');
+            feedbackMsg.innerText = "不正解...🙅‍♀️ 正解は「" + correctAnswer + "」です";
+            feedbackMsg.style.color = "#c0392b";
+        }
+
+        nextBtn.style.display = 'block';
+    }
+    
+    function timeUp() {
+        const currentQuestion = shuffledQuizData[currentQuestionIndex];
+        const buttons = optionsContainer.querySelectorAll('button');
+        
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.innerText === currentQuestion.answer) {
+                btn.classList.add('correct');
+            }
+        });
+
+        feedbackMsg.innerText = "時間切れ！⏰ 正解は「" + currentQuestion.answer + "」です";
+        feedbackMsg.style.color = "#c0392b";
+
+        nextBtn.style.display = 'block';
+    }
+
+    function goToNextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < shuffledQuizData.length) {
+            showQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        document.getElementById('result-score').textContent = `${score} / ${shuffledQuizData.length}`;
+        
+        const comment = document.getElementById('comment');
+        const percentage = score / shuffledQuizData.length;
+        
+        if(score === shuffledQuizData.length) comment.textContent = "全問正解！素晴らしい！🎉";
+        else if(percentage >= 0.8) comment.textContent = "高得点！あと少し！👍";
+        else comment.textContent = "復習してもう一度頑張ろう！💪";
+    }
+</script>
+
+</body>
+</html>
+
