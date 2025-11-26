@@ -1,4 +1,4 @@
-const quizData = [
+const vocabQuestions = [
     // --- 【第1編 生命現象と物質】 ---
     {
         category: "細胞と分子",
@@ -1851,3 +1851,4 @@ const quizData = [
     }
     
 ];
+
