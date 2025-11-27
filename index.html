@@ -8,14 +8,12 @@
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { background-color: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;}
         
-        /* ヘッダー周り */
         h1 { color: #2c3e50; font-size: 24px; margin-bottom: 10px; letter-spacing: 1px; flex-shrink: 0;}
         .subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; flex-shrink: 0;}
 
-        /* スクロール領域の確保 */
         .scroll-content { overflow-y: auto; flex-grow: 1; padding: 0 5px; }
 
-        /* メインメニューのボタン */
+        /* メニューボタン */
         .menu-btn {
             display: block; width: 100%; padding: 20px; margin: 15px 0;
             border: none; border-radius: 15px; cursor: pointer;
@@ -30,22 +28,18 @@
         .btn-exp { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); color: #d63031; }
         .btn-exp h2 { color: #c0392b; }
 
-        /* 設定画面のスタイル */
+        /* 設定・ボタン類 */
         .mode-select-group { display: flex; gap: 10px; margin-bottom: 20px; }
         .mode-btn { flex: 1; padding: 15px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; background: white; font-weight: bold; color: #95a5a6; }
         .mode-btn.selected { border-color: #3498db; background-color: #eaf6fd; color: #3498db; }
         
-        /* ボタン類 */
         .btn-start { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        /* 再挑戦ボタン（緑色） */
         .btn-retry { background-color: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         .btn-retry:hover { background-color: #219150; }
-        
         .btn-back { background: none; border: none; color: #95a5a6; margin-top: 15px; cursor: pointer; text-decoration: underline; }
 
         /* クイズ画面 */
         .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
-        
         .btn-stop {
             background-color: #fff; color: #7f8c8d; border: 1px solid #bdc3c7;
             padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
@@ -72,7 +66,7 @@
         
         .tag { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #eee; color: #555; margin-bottom: 8px; }
 
-        /* 復習リスト用のスタイル */
+        /* 復習リスト */
         .review-container { text-align: left; margin-top: 20px; width: 100%; }
         .review-item { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; }
         .review-item.r-correct { border-left: 5px solid #2ecc71; }
@@ -82,7 +76,6 @@
         .ans-label { font-weight: bold; margin-right: 5px; }
         .val-correct { color: #27ae60; }
         .val-wrong { color: #c0392b; }
-        .val-yours { color: #2980b9; }
     </style>
 </head>
 <body>
@@ -99,7 +92,7 @@
 
         <button class="menu-btn btn-exp" onclick="goToSettings('exp')">
             <h2>🧪 実験・思考力トレーニング</h2>
-            <p>結果予測・考察・実験デザイン（約300問）</p>
+            <p>結果予測・考察・実験デザイン（約100問）</p>
         </button>
         <p id="status-msg" style="font-size:12px; color:#aaa; margin-top:20px;"></p>
     </div>
@@ -110,7 +103,7 @@
         <div id="vocab-settings" class="hidden">
             <div class="input-group">
                 <label>出題する単元</label>
-                <select id="category-select">
+                <select id="vocab-category-select">
                     <option value="all">全範囲（ランダム）</option>
                 </select>
             </div>
@@ -121,6 +114,13 @@
             <div class="mode-select-group">
                 <button class="mode-btn selected" id="btn-easy" onclick="setExpDifficulty('easy')">🐣 Easy<br><span style="font-size:10px">理由つき</span></button>
                 <button class="mode-btn" id="btn-hard" onclick="setExpDifficulty('hard')">🔥 Hard<br><span style="font-size:10px">実戦形式</span></button>
+            </div>
+            
+            <div class="input-group" style="margin-top:15px;">
+                <label>実験の単元</label>
+                <select id="exp-category-select">
+                    <option value="all">全範囲（ランダム）</option>
+                </select>
             </div>
         </div>
 
@@ -229,6 +229,7 @@
         } else {
             document.getElementById('setting-title').textContent = "実験考察トレーニング設定";
             document.getElementById('exp-settings').classList.remove('hidden');
+            initExpCategories(); // ★実験カテゴリも初期化
         }
     }
 
@@ -237,8 +238,9 @@
         document.getElementById('menu-screen').classList.remove('hidden');
     }
 
+    // 単語カテゴリ生成
     function initVocabCategories() {
-        const select = document.getElementById('category-select');
+        const select = document.getElementById('vocab-category-select');
         if (select.options.length > 1) return; 
         if (typeof vocabQuestions === 'undefined') return;
 
@@ -253,11 +255,37 @@
         });
     }
 
+    // ★実験カテゴリ生成（難易度に応じて中身を変える）
+    function initExpCategories() {
+        const select = document.getElementById('exp-category-select');
+        select.innerHTML = '<option value="all">全範囲（ランダム）</option>'; // リセット
+
+        let targetData = [];
+        if (expDifficulty === 'easy') {
+            if (typeof easyQuestions !== 'undefined') targetData = easyQuestions;
+        } else {
+            if (typeof hardQuestions !== 'undefined') targetData = hardQuestions;
+        }
+
+        const categories = [...new Set(targetData.map(q => q.category))];
+        categories.forEach(cat => {
+            if(cat){
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            }
+        });
+    }
+
+    // 難易度切り替え時にカテゴリも更新する
     function setExpDifficulty(diff) {
         expDifficulty = diff;
         document.getElementById('btn-easy').classList.remove('selected');
         document.getElementById('btn-hard').classList.remove('selected');
         document.getElementById('btn-' + diff).classList.add('selected');
+        
+        initExpCategories(); // ★ここで再生成
     }
 
     function shuffle(array) {
@@ -268,18 +296,18 @@
         return array;
     }
 
-    // クイズ開始
+    // クイズ開始処理
     function startQuiz() {
         let sourceData = [];
+        let selectedCat = 'all';
+
         if (appMode === 'vocab') {
             if (typeof vocabQuestions === 'undefined') { alert("単語データがありません"); return; }
-            const cat = document.getElementById('category-select').value;
-            if (cat === 'all') {
-                sourceData = vocabQuestions;
-            } else {
-                sourceData = vocabQuestions.filter(q => q.category === cat);
-            }
+            selectedCat = document.getElementById('vocab-category-select').value;
+            sourceData = vocabQuestions;
         } else {
+            // 実験モード
+            selectedCat = document.getElementById('exp-category-select').value;
             if (expDifficulty === 'easy') {
                 if (typeof easyQuestions === 'undefined') { alert("Easyデータがありません"); return; }
                 sourceData = easyQuestions;
@@ -289,10 +317,22 @@
             }
         }
 
+        // カテゴリフィルタリング
+        if (selectedCat !== 'all') {
+            sourceData = sourceData.filter(q => q.category === selectedCat);
+        }
+
+        // 出題数調整
         let count = parseInt(document.getElementById('question-count').value);
         timeLimitSetting = parseInt(document.getElementById('time-limit').value);
 
         if (count > sourceData.length) count = sourceData.length;
+        
+        // 0問対策
+        if (count === 0) {
+            alert("選択されたカテゴリに問題がありません。別のカテゴリを選んでください。");
+            return;
+        }
 
         currentData = shuffle([...sourceData]).slice(0, count);
         
@@ -301,7 +341,7 @@
         userHistory = []; 
 
         document.getElementById('setting-screen').classList.add('hidden');
-        document.getElementById('result-screen').classList.add('hidden'); // 再挑戦時に隠す
+        document.getElementById('result-screen').classList.add('hidden'); 
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('quiz-screen').style.display = 'flex'; 
         
@@ -309,13 +349,10 @@
         showQuestion();
     }
 
-    // ★再挑戦機能
     function retryQuiz() {
-        // 設定画面の値は残っているので、そのまま startQuiz を呼べばOK
         startQuiz();
     }
 
-    // ★中断機能
     function stopQuiz() {
         if(!confirm('クイズを中断してメニューに戻りますか？')) return;
         
@@ -465,4 +502,3 @@
 
 </body>
 </html>
-
