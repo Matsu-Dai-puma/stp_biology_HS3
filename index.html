@@ -7,6 +7,8 @@
     <style>
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { background-color: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;}
+        
+        /* ヘッダー周り */
         h1 { color: #2c3e50; font-size: 24px; margin-bottom: 10px; letter-spacing: 1px; flex-shrink: 0;}
         .subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 30px; flex-shrink: 0;}
 
@@ -37,6 +39,16 @@
         .btn-back { background: none; border: none; color: #95a5a6; margin-top: 15px; cursor: pointer; text-decoration: underline; }
 
         /* クイズ画面 */
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
+        
+        /* ★中断ボタンのスタイル */
+        .btn-stop {
+            background-color: #fff; color: #7f8c8d; border: 1px solid #bdc3c7;
+            padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-stop:hover { background-color: #f0f0f0; border-color: #95a5a6; }
+
         .option-btn { background-color: #f8f9fa; color: #2c3e50; border: 2px solid #e9ecef; text-align: left; padding: 16px; font-size: 16px; width: 100%; margin-bottom: 12px; cursor: pointer; border-radius: 12px; transition: 0.2s; }
         .option-btn:hover:not(:disabled) { background-color: #e2e6ea; }
         .correct { background-color: #d4edda !important; border-color: #c3e6cb !important; color: #155724 !important; }
@@ -56,7 +68,7 @@
         
         .tag { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #eee; color: #555; margin-bottom: 8px; }
 
-        /* ▼▼▼ 復習リスト用のスタイル（追加） ▼▼▼ */
+        /* 復習リスト用のスタイル */
         .review-container { text-align: left; margin-top: 20px; width: 100%; }
         .review-item { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; }
         .review-item.r-correct { border-left: 5px solid #2ecc71; }
@@ -73,7 +85,7 @@
 
 <div class="container">
     <div id="menu-screen" class="scroll-content">
-        <h1>生物対策 一問一答</h1>
+        <h1>生物 完全攻略</h1>
         <p class="subtitle">今日は何を勉強しますか？</p>
         
         <button class="menu-btn btn-vocab" onclick="goToSettings('vocab')">
@@ -133,10 +145,11 @@
     </div>
 
     <div id="quiz-screen" class="hidden" style="width:100%; height:100%; display:flex; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; font-size:14px; color:#888; margin-bottom:5px; flex-shrink:0;">
-            <span id="mode-display">モード</span>
-            <span><span id="current-q">1</span> / <span id="total-q">10</span></span>
+        <div class="quiz-header">
+            <button class="btn-stop" onclick="stopQuiz()">↩ 中断する</button>
+            <span style="font-size:14px; color:#888;"><span id="current-q">1</span> / <span id="total-q">10</span></span>
         </div>
+        
         <div id="timer-bar-container"><div id="timer-bar"></div></div>
         
         <div class="scroll-content">
@@ -177,7 +190,7 @@
     let score = 0;
     let timeLimitSetting = 15;
     let timerInterval;
-    let userHistory = []; // ★履歴保存用配列
+    let userHistory = []; 
 
     // 起動時のデータチェック
     window.onload = function() {
@@ -250,7 +263,6 @@
     }
 
     function startQuiz() {
-        // データ選択ロジック
         let sourceData = [];
         if (appMode === 'vocab') {
             if (typeof vocabQuestions === 'undefined') { alert("単語データがありません"); return; }
@@ -277,20 +289,26 @@
 
         currentData = shuffle([...sourceData]).slice(0, count);
         
-        // リセット
         currentIndex = 0;
         score = 0;
-        userHistory = []; // ★履歴リセット
+        userHistory = []; 
 
         document.getElementById('setting-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
-        // クイズ画面ではflexスタイルを適用（強制上書き）
         document.getElementById('quiz-screen').style.display = 'flex'; 
         
         document.getElementById('total-q').textContent = currentData.length;
-        document.getElementById('mode-display').textContent = appMode === 'vocab' ? "単語" : (expDifficulty === 'easy' ? "実験(Easy)" : "実験(Hard)");
-
         showQuestion();
+    }
+
+    // ★中断機能
+    function stopQuiz() {
+        if(!confirm('クイズを中断してメニューに戻りますか？')) return;
+        
+        clearInterval(timerInterval);
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('menu-screen').classList.remove('hidden');
     }
 
     function showQuestion() {
@@ -349,7 +367,6 @@
         const feedback = document.getElementById('feedback-msg');
         const isCorrect = (btn.textContent === correct);
 
-        // ★履歴に保存
         userHistory.push({
             question: currentData[currentIndex].question,
             userChoice: btn.textContent,
@@ -366,8 +383,6 @@
             feedback.innerHTML = `<span style='color:#c0392b'>不正解...🙅‍♀️ <br>正解は「${correct}」</span>`;
         }
         document.getElementById('next-btn').style.display = 'block';
-        
-        // 自動スクロール
         document.getElementById('next-btn').scrollIntoView({behavior: "smooth", block: "center"});
     }
     
@@ -379,7 +394,6 @@
             if(b.textContent === q.answer) b.classList.add('correct');
         });
         
-        // ★履歴に保存（時間切れ）
         userHistory.push({
             question: q.question,
             userChoice: "（時間切れ）",
@@ -403,7 +417,7 @@
 
     function showResult() {
         document.getElementById('quiz-screen').classList.add('hidden');
-        document.getElementById('quiz-screen').style.display = 'none'; // flex解除
+        document.getElementById('quiz-screen').style.display = 'none'; 
         document.getElementById('result-screen').classList.remove('hidden');
         
         document.getElementById('score-num').textContent = score;
@@ -416,16 +430,13 @@
         else if (rate >= 0.5) comment.textContent = "まずは半分クリア！復習しましょう💪";
         else comment.textContent = "焦らず基礎から確認していきましょう🔰";
 
-        // ★復習リストの生成
         const listContainer = document.getElementById('review-list');
         listContainer.innerHTML = "<h3>📝 復習リスト</h3>";
         
         userHistory.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = item.isCorrect ? 'review-item r-correct' : 'review-item r-wrong';
-            
             const resultIcon = item.isCorrect ? "✅" : "❌";
-            
             div.innerHTML = `
                 <span class="review-q">Q${index + 1}. ${item.question}</span>
                 <div class="review-ans">
