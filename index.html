@@ -35,13 +35,17 @@
         .mode-btn { flex: 1; padding: 15px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; background: white; font-weight: bold; color: #95a5a6; }
         .mode-btn.selected { border-color: #3498db; background-color: #eaf6fd; color: #3498db; }
         
-        .btn-start { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        /* ボタン類 */
+        .btn-start { background-color: #2c3e50; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        /* 再挑戦ボタン（緑色） */
+        .btn-retry { background-color: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-retry:hover { background-color: #219150; }
+        
         .btn-back { background: none; border: none; color: #95a5a6; margin-top: 15px; cursor: pointer; text-decoration: underline; }
 
         /* クイズ画面 */
         .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0; }
         
-        /* ★中断ボタンのスタイル */
         .btn-stop {
             background-color: #fff; color: #7f8c8d; border: 1px solid #bdc3c7;
             padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
@@ -171,9 +175,11 @@
         </div>
         <p id="comment" style="margin-bottom:20px;">コメント</p>
         
+        <button class="btn-retry" onclick="retryQuiz()">🔄 同じ設定で再挑戦</button>
+        
         <div id="review-list" class="review-container"></div>
 
-        <button class="btn-start" onclick="location.reload()">トップに戻る</button>
+        <button class="btn-start" onclick="location.reload()" style="background-color:#95a5a6; font-size:14px; margin-top:30px;">🏠 トップに戻る</button>
     </div>
 </div>
 
@@ -262,6 +268,7 @@
         return array;
     }
 
+    // クイズ開始
     function startQuiz() {
         let sourceData = [];
         if (appMode === 'vocab') {
@@ -294,11 +301,18 @@
         userHistory = []; 
 
         document.getElementById('setting-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.add('hidden'); // 再挑戦時に隠す
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('quiz-screen').style.display = 'flex'; 
         
         document.getElementById('total-q').textContent = currentData.length;
         showQuestion();
+    }
+
+    // ★再挑戦機能
+    function retryQuiz() {
+        // 設定画面の値は残っているので、そのまま startQuiz を呼べばOK
+        startQuiz();
     }
 
     // ★中断機能
@@ -451,4 +465,3 @@
 
 </body>
 </html>
-
